@@ -1,6 +1,6 @@
 const Block = require('./block');
 
-class Blockchain {
+class Blockchain {clear
 	constructor(){
 		this.blocks = [new Block()];
 		this.ind = 1;
