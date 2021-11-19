@@ -1,5 +1,7 @@
 const Block = require('./block');
+var process = require('process');
 
+console.log('(Filho) Meu PID é: ' + process.pid);
 class Blockchain {clear
 	constructor(){
 		this.blocks = [new Block()];
