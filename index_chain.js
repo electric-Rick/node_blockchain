@@ -1,59 +1,85 @@
+// Autor: Erick Augusto de Almeida
+// Última atualização: 04/12/2021 03:55 AM
+/*****************************************************************************************************/
+// Observações: Ainda é preciso aumentar a funcionalidade deste código por ser apenas um demosntativo /
+// Versão: 0.0.2v                                                                                 /
+/*****************************************************************************************************/
+
+//Dependências neste arquivo: 
 var counter = 0;
-var process = require('process');
 
-console.log('(Filho)Meu PID é: ' + process.pid);
+// Apenas para verificar as threads do arquivo  e seus respectivos PID's
+//var process = require('process');
+//const worker = require('worker_threads');
+//console.log("(index_chain.js) thread: " + process.pid);
+//console.log("(index_chain.js) Meu TID: " + worker.threadId);
 
-(async ()=>{
+// Função assíncrona para poder captar os dados da ORM.
 
+(async ()=>{	
 	const Blockchain = require('./block_chain');
-	const me  = new Blockchain();
+	const new_block  = new Blockchain();
 	const database = require('./conn_db');
+
+	// Requesita o bloco
 	const Bloco = require('./bloco_gerado');
 
+// Loop para iterar até o limite de 100 dados por chamada na url principal.
+while(counter < 100){
 
-while(counter<=10){
-	counter++;
+	// Verifica se o novo bloco é válido para que aí sim seja adicionado ao banco de dados
+	if(new_block.isValid() == true){	
 
-	if(me.isValid() == true){	
-		me.addBl(`dado_simbólico_n${counter}`);
+	// Identificador do bloco atravé do console, mostrando o índice do bloco correspondente ao dado naquele momento
+	console.log(`Aguarde... Adicionando bloco ${counter} ao banco de dados`)
+
+	// Caso seja o seu índice estritamente igual a zero, ele entenderá como bloco gênesis e já faz parte de outra cadeia
+	if(counter === 0){
+
+		// Contador apenas para iterar e modificar os dados
+		counter++;
+
+		// A cada rodada do counter, é criado um novo item no bloco que foi criado, sendo o limite neste código igual a 100 dados por bloco.
+		new_block.addBl(`Dados simbólicos em ${Date.now()}`);
+		
+		// Sequelize cria o bloco gênesis no banco de dados
 		const novos_blocos =  Bloco.create({
-		block_index: me['blocks'][counter]['ind'].toString(), // No lugar dos identificadores, pode ser usual utilizar funções para comparar os dados
-		block_data: me['blocks'][counter]['data'].toString(),
-		block_p_hash: me['blocks'][counter]['prevHash'],
-		block_c_hash: me['blocks'][counter]['hash'].toString(),
-		block_difficulty: me['blocks'][counter]['difficulty'].toString(),
-		block_nonce: me['blocks'][counter]['nonce'].toString(),
-		block_timestamp: me['blocks'][counter]['time_st'].toString()
+		
+		block_index: new_block['blocks'][counter]['ind'].toString(), 
+		block_data: 'GENESIS', // Força o primeiro dado ser Gênesis
+		block_p_hash: null, // Força o hash anterior do gênesis ser nulo
+		block_c_hash: new_block['blocks'][counter]['hash'].toString(),
+		block_difficulty: new_block['blocks'][counter]['difficulty'].toString(),
+		block_nonce: new_block['blocks'][counter]['nonce'].toString(),
+		block_timestamp: new_block['blocks'][counter]['time_st'].toString()
 	    	
+		})
+
+	}
+		// Continua caso já exista o bloco inicial.
+		counter++;
+
+		new_block.addBl(`Dados simbólicos em ${Date.now()}`);
+		
+		const novos_blocos =  Bloco.create({
+
+		block_index: new_block['blocks'][counter]['ind'].toString(), 
+		block_data: new_block['blocks'][counter]['data'].toString(),
+		block_p_hash: new_block['blocks'][counter]['prevHash'],
+		block_c_hash: new_block['blocks'][counter]['hash'].toString(),
+		block_difficulty: new_block['blocks'][counter]['difficulty'].toString(),
+		block_nonce: new_block['blocks'][counter]['nonce'].toString(),
+		block_timestamp: new_block['blocks'][counter]['time_st'].toString()
+
 		})
 	}
 
-	}
-
-await database.sync()	
- 
-
-})();
-
-/*
-
-function Bloco_(block){
-	
-	me.addBl(`dado_simbólico_n${counter}`);
-	while(counter<=10){
-	counter++;
-
-	const id = block['blocks'][counter]['ind'].toString();
-	const data = block['blocks'][counter]['data'].toString();
-	const hash = block['blocks'][counter]['prevHash'].toString();
-	const c_hash = block['blocks'][counter]['hash'].toString();
-	const diffic = block['blocks'][counter]['difficulty'].toString();
-	const nonce = block['blocks'][counter]['nonce'].toString();
-	const timestamp = block['blocks'][counter]['time_st'].toString();
-	
-	return this.block;
 
 }
 
+// Sincroniza o banco de dados com os dados enviados a partir das chaves - valores da variável novos_blocos
+await database.sync();
 
-*/
+
+
+})(); // Por se tratar de uma IIFE, é preciso realizar o callback da função assim que ela é terminada. Não precisei adicionar nenhum parâmetro, mas poderia ser acoplada a um parâmetro de verificação caso fosse necessário;
